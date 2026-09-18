@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Estante Clássica - Cadastro por Array</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: #ffffff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body, html {
+                background-color: #1a1a1a;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body, html {
+                height: auto;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .furniture-wrapper {
+                height: auto;
+                min-height: auto;
+                padding: 10px 10px 20px 10px;
+            }
+
+            .shelf-top-crown {
+                height: 20px;
+                width: calc(100% + 20px);
+            }
+
+            .shelf-top-crown::before, .shelf-top-crown::after {
+                font-size: 10px;
+            }
+
+            .shelf-header {
+                height: 12px;
+                border-bottom: 3px solid #121212;
+            }
+
+            .library-container {
+                border-left: 5px solid #121212;
+                border-right: 5px solid #121212;
+                height: 400px;
+                min-height: auto;
+                max-height: none;
+            }
+
+            .library-column {
+                border-right: 4px solid #121212;
+            }
+
+            .shelf-row {
+                border-bottom: 5px solid #121212;
+                padding: 0 1px;
+            }
+
+            .shelf-footer {
+                height: 35px;
+                width: calc(100% + 15px);
+                border-top: 3px solid #121212;
+            }
+
+            .book, a.book-link {
+                margin-right: 0.5px;
+            }
+
+            .book:hover, a.book-link:hover { 
+                transform: scale(1.05) translateY(-3px); 
+            }
+        }
+
+        .furniture-wrapper {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        /* --- TOPO CLÁSSICO --- */
+        .shelf-top-crown {
+            width: calc(100% + 30px);
+            height: 50px;
+            background: #121212;
+            z-index: 6;
+            border-bottom: 4px solid #121212;
+            flex-shrink: 0;
+            position: relative;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.7);
+        }
+        .shelf-top-crown::before, .shelf-top-crown::after {
+            content: "✦";
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            color: #999B9B; font-size: 15px;
+        }
+        .shelf-top-crown::before { left: 15px; }
+        .shelf-top-crown::after { right: 15px; }
+
+        .shelf-header {
+            width: calc(100% + 10px);
+            height: 25px;
+            background: #121212;
+            z-index: 5;
+            border-bottom: 6px solid #121212;
+            flex-shrink: 0;
+        }
+
+        /* --- ESTRUTURA DE COLUNAS (GRID) --- */
+        .library-container {
+            flex: 1;
+            width: 100%;
+            background-color: #121212;
+            border-left: 10px solid #121212;
+            border-right: 10px solid #121212;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .library-column {
+            display: grid;
+            grid-template-rows: repeat(6, 1fr);
+            border-right: 8px solid #121212;
+            height: 100%;
+        }
+        .library-column:last-child { border-right: none; }
+
+        .shelf-row {
+            display: flex; 
+            align-items: flex-end; 
+            padding: 0 2px;
+            background: #0d0d0d;
+            border-bottom: 10px solid #121212;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* --- BASE SÓLIDA --- */
+        .shelf-footer { 
+            width: calc(100% + 20px); 
+            height: 60px; 
+            background: #121212;
+            border-top: 5px solid #121212;
+            flex-shrink: 0;
+            z-index: 1;
+            box-shadow: 0px -10px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- LIVROS --- */
+        .book, a.book-link {
+            margin-right: 1px;
+            background-size: 100% 100%;
+            box-shadow: 1px 0 3px rgba(0,0,0,0.8);
+            transition: transform 0.2s;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: block;
+            text-decoration: none;
+        }
+        .book:hover, a.book-link:hover { transform: scale(1.1) translateY(-5px); z-index: 10; }
+
+        /* --- PREVIEW AMPLIADO (ZOOM AO PASSAR O MOUSE) --- */
+        #zoom-preview {
+            position: fixed;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            background: transparent;
+        }
+
+        #zoom-preview.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        #zoom-img {
+            display: block;
+            max-height: 65vh;
+            max-width: 90vw;
+            filter: drop-shadow(0 10px 25px rgba(0,0,0,0.6));
+        }
+    </style>
+</head>
+<body>
+
+    <div class="furniture-wrapper">
+        <div class="shelf-top-crown"></div>
+        <div class="shelf-header"></div>
+        
+        <div class="library-container" id="libraryContainer">
+            </div>
+
+        <div class="shelf-footer"></div>
+    </div>
+
+    <div id="zoom-preview">
+        <img id="zoom-img" src="" alt="">
+    </div>
+
+    <script>
+        const COLUMNS = 5;
+        const SHELVES = 6;
+
+        /* =======================================================
+           >>> AQUI É ONDE VOCÊ CADASTRA OS LIVROS <
+
+           Copie e cole um bloco { ... }, para cada volume.
+           Campos:
+             series -> Nome da obra           (obrigatório)
+             vol    -> Número do volume       (use 0 ou apague a linha se for volume único)
+             url    -> URL pública da imagem da lombada (obrigatório)
+             link   -> URL da página do Notion (apague a linha se não tiver)
+             h_cm   -> Altura em centímetros  (padrão 19)
+             w_cm   -> Espessura em centímetros (padrão 1.5)
+
+           Não esqueça da vírgula entre um bloco e o outro.
+
+           OBS: a altura/largura real em cm é convertida automaticamente
+           para caber no nicho da estante. O livro mais alto cadastrado
+           é quem define a escala (ele ocupa quase toda a altura da
+           prateleira); todos os outros são desenhados menores na MESMA
+           proporção — ou seja, a relação de tamanho entre os livros
+           continua fiel aos centímetros reais, só a escala visual muda.
+        ======================================================= */
+
+        const MEUS_LIVROS = [
+            {
+                series: "Spy X Family",
+                vol: 6,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/6.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-6-2dad0c17411c80459001ca5276e1c055",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 7,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/7.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-7-2dad0c17411c809b8eddcb0aa20d5db3",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 8,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/8.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-8-2dad0c17411c80cabceed995e7631eea",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 9,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/9.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-9-2dad0c17411c8040976bf9b77c9e498f",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 10,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/10.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-10-2dad0c17411c800e9111eed6af3b46eb",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 11,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/11.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-11-2dad0c17411c8027829be291dfe1165e",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 12,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/12.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-12-2dad0c17411c80b0992ced798f4dde74",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 13,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/13.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-13-2dad0c17411c800aa1bfda8421bbfe99",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 14,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/14.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-14-2dad0c17411c80c5b4d8f8049ef3a217",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Spy X Family",
+                vol: 15,
+                url: "https://raw.githubusercontent.com/rayarchive/Lombadas/refs/heads/main/SPY%20X%20FAMILY/15.png",
+                link: "https://app.notion.com/p/Spy-X-Family-Vol-15-2dad0c17411c8030b811f225785bf0b5",
+                h_cm: 20,
+                w_cm: 1.3    
+            },
+            {
+                series: "Viver ou Viver",
+                vol: 0,
+                url: "https://sindicfcmg.org.br/wp-content/uploads/2024/08/sem-imagem11-1.jpg",
+                link: "https://app.notion.com/p/Viver-ou-Viver-33ed0c17411c8062bd60f3e2af84554e",
+                h_cm: 21,
+                w_cm: 1.5    
+            },
+            {
+                series: "Yon",
+                vol: 1,
+                url: "https://sindicfcmg.org.br/wp-content/uploads/2024/08/sem-imagem11-1.jpg",
+                link: "https://app.notion.com/p/Yon-Volume-1-334d0c17411c8068a388f57851c13a76",
+                h_cm: 20,
+                w_cm: 1.5    
+            },
+            {
+                series: "Yon",
+                vol: 2,
+                url: "https://sindicfcmg.org.br/wp-content/uploads/2024/08/sem-imagem11-1.jpg",
+                link: "https://app.notion.com/p/Yon-Volume-2-3ced0c17411c807eaf7bf4899efaa8b0",
+                h_cm: 21,
+                w_cm: 1.6    
+            },
+            {
+                series: "Your Letter",
+                vol: 0,
+                url: "https://sindicfcmg.org.br/wp-content/uploads/2024/08/sem-imagem11-1.jpg",
+                link: "https://app.notion.com/p/Your-Letter-3b3d0c17411c80e281b0ffe60284f448",
+                h_cm: 21,
+                w_cm: 2 
+            },
+        ];
+
+        /* ======= FIM DA ÁREA DE CADASTRO ======= */
+
+        // Remove entradas incompletas (sem nome ou sem imagem)
+        const livros = MEUS_LIVROS.filter(b => b && b.series && b.url);
+
+        // Margem de segurança: o livro mais alto ocupa 95% da altura do nicho.
+        const TOP_CLEARANCE = 0.95;
+
+        // Escala: quantas vezes maior que a lombada real o preview de zoom fica.
+        const PREVIEW_SCALE = 8;
+
+        function init() {
+            const container = document.getElementById('libraryContainer');
+            container.innerHTML = '';
+            for (let c = 0; c < COLUMNS; c++) {
+                const col = document.createElement('div');
+                col.className = 'library-column';
+                for (let s = 0; s < SHELVES; s++) {
+                    const shelf = document.createElement('div');
+                    shelf.className = 'shelf-row';
+                    shelf.id = `s-${c}-${s}`;
+                    col.appendChild(shelf);
+                }
+                container.appendChild(col);
+            }
+            render();
+        }
+
+        function render() {
+            document.querySelectorAll('.shelf-row').forEach(s => s.innerHTML = '');
+            if (livros.length === 0) return;
+
+            // Ordena por série e depois por volume
+            const sortedBooks = [...livros].sort((a, b) => {
+                const cmp = a.series.localeCompare(b.series);
+                if (cmp !== 0) return cmp;
+                return (a.vol || 0) - (b.vol || 0);
+            });
+
+            // --- CALCULA A ESCALA (px por cm) ---
+            const refShelf = document.getElementById('s-0-0');
+            const shelfHeightPx = refShelf.clientHeight;
+
+            const MAX_H_CM = Math.max(...sortedBooks.map(b => b.h_cm || 19));
+            const scale = (shelfHeightPx * TOP_CLEARANCE) / MAX_H_CM; // px por cm
+
+            let bookIdx = 0;
+
+            // Percorre PRIMEIRO por prateleira (linha), DEPOIS por coluna (nicho).
+            // Só desce para a prateleira de baixo quando todos os nichos da
+            // prateleira atual (esquerda -> direita) estiverem cheios.
+            for (let s = 0; s < SHELVES; s++) {
+                for (let c = 0; c < COLUMNS; c++) {
+                    const shelf = document.getElementById(`s-${c}-${s}`);
+                    if (!shelf) continue;
+
+                    const shelfStyle = window.getComputedStyle(shelf);
+                    const paddingLeft = parseFloat(shelfStyle.paddingLeft) || 0;
+                    const paddingRight = parseFloat(shelfStyle.paddingRight) || 0;
+                    const maxWidth = shelf.clientWidth - paddingLeft - paddingRight;
+                    let usedWidth = 0;
+
+                    while (bookIdx < sortedBooks.length) {
+                        const b = sortedBooks[bookIdx];
+                        const wPx = (b.w_cm || 1.5) * scale;
+                        const margin = 1;
+
+                        if (usedWidth + wPx + margin <= maxWidth) {
+                            shelf.appendChild(createBook(b, scale));
+                            usedWidth += wPx + margin;
+                            bookIdx++;
+                        } else break;
+                    }
+                }
+            }
+        }
+
+        function createBook(book, scale) {
+            const heightPx = (book.h_cm || 19) * scale;
+            const widthPx = (book.w_cm || 1.5) * scale;
+
+            let el;
+            if (book.link) {
+                el = document.createElement('a');
+                el.className = 'book-link';
+                el.href = book.link.startsWith('http') ? book.link : 'https://' + book.link;
+                el.target = '_blank';
+                el.rel = 'noopener';
+            } else {
+                el = document.createElement('div');
+                el.className = 'book';
+            }
+
+            el.style.backgroundImage = `url('${book.url.replace(/\s/g, '%20')}')`;
+            el.style.width = `${widthPx}px`;
+            el.style.height = `${heightPx}px`;
+
+            const displayVol = book.vol > 0 ? ` #${book.vol}` : '';
+            const title = `${book.series}${displayVol}`;
+            el.setAttribute('data-title', title);
+
+            attachZoom(el, book, heightPx);
+
+            return el;
+        }
+
+        // --- ZOOM AO PASSAR O MOUSE ---
+        const preview = document.getElementById('zoom-preview');
+        const previewImg = document.getElementById('zoom-img');
+
+        function movePreview(e) {
+            const box = preview.getBoundingClientRect();
+            let x = e.clientX + 20;
+            let y = e.clientY - box.height / 2;
+
+            // Não deixa o preview sair da tela
+            if (x + box.width > window.innerWidth - 8) x = e.clientX - box.width - 20;
+            if (x < 8) x = 8;
+            if (y < 8) y = 8;
+            if (y + box.height > window.innerHeight - 8) y = window.innerHeight - box.height - 8;
+
+            preview.style.left = `${x}px`;
+            preview.style.top = `${y}px`;
+        }
+
+        function attachZoom(el, book, heightPx) {
+            el.addEventListener('mouseenter', (e) => {
+                previewImg.src = book.url.replace(/\s/g, '%20');
+                previewImg.alt = '';
+
+                previewImg.style.height = `${heightPx * PREVIEW_SCALE}px`;
+                previewImg.style.width = 'auto';
+
+                preview.classList.add('visible');
+                movePreview(e);
+            });
+
+            el.addEventListener('mousemove', movePreview);
+
+            el.addEventListener('mouseleave', () => {
+                preview.classList.remove('visible');
+            });
+        }
+
+        window.onload = init;
+        window.onresize = render;
+    </script>
+</body>
+</html>
