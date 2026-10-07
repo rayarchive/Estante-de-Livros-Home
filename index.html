@@ -1740,13 +1740,8 @@
         function render() {
             document.querySelectorAll('.shelf-row').forEach(s => s.innerHTML = '');
             if (livros.length === 0) return;
-
-            // Ordena por série e depois por volume
-            const sortedBooks = [...livros].sort((a, b) => {
-                const cmp = a.series.localeCompare(b.series);
-                if (cmp !== 0) return cmp;
-                return (a.vol || 0) - (b.vol || 0);
-            });
+          
+            const sortedBooks = [...livros];
 
             // --- CALCULA A ESCALA (px por cm) ---
             const refShelf = document.getElementById('s-0-0');
